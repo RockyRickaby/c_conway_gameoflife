@@ -1,0 +1,52 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 0,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+        "name": "gcc",
+        "displayName": "GCC",
+        "description": "Extra build options for GCC",
+        "generator": "Ninja",
+        "binaryDir": "${sourceDir}/build",
+        "cacheVariables": {
+            "CMAKE_C_COMPILER": "gcc",
+            "CMAKE_C_FLAGS": "-Wall -Wextra"
+        }
+    },
+    {
+        "name": "clang",
+        "displayName": "Clang",
+        "description": "Extra build options for Clang",
+        "generator": "Ninja",
+        "binaryDir": "${sourceDir}/build",
+        "cacheVariables": {
+            "CMAKE_C_COMPILER": "clang",
+            "CMAKE_C_FLAGS": "-Wall -Wextra"
+        }
+    },
+    {
+        "name": "msvc",
+        "displayName": "MSVC",
+        "description": "Extra build options for Visual Studio",
+        "generator": "Visual Studio 17 2022",
+        "binaryDir": "${sourceDir}/build",
+        "cacheVariables": {
+            "CMAKE_C_FLAGS": "/W4"
+        }
+    },
+    {
+        "name": "msvc-debug",
+        "displayName": "MSVC",
+        "description": "Extra build options for Visual Studio",
+        "generator": "Visual Studio 17 2022",
+        "binaryDir": "${sourceDir}/build",
+        "cacheVariables": {
+            "CMAKE_C_FLAGS": "/W4 /D ARENA_DEBUG"
+        }
+    }
+  ]
+}

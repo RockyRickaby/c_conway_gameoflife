@@ -180,6 +180,7 @@ int gol_step(GameOfLife *gol) {
     }
     gol->cells.requires_update = gol->cells.requires_update ? 1 : has_next_state;
     arena_pop(gol->arena, bytes); // discard array of cells
+    ls = NULL;
     return has_next_state;
 }
 
@@ -223,10 +224,20 @@ static void update_cell(GameOfLife *gol, int32_t x, int32_t y) {
             ls[ls_idx].point.x = x;
             ls[ls_idx].point.y = y;
             ls_idx++;
+        } else {
+            ls[ls_idx].alive = 1;
+            ls[ls_idx].point.x = x;
+            ls[ls_idx].point.y = y;
+            ls_idx++;
         }
     } else { // we are dead. check if we should live
         if (neighbors == 3) {
             ls[ls_idx].alive = 1;
+            ls[ls_idx].point.x = x;
+            ls[ls_idx].point.y = y;
+            ls_idx++;
+        } else {
+            ls[ls_idx].alive = 0;
             ls[ls_idx].point.x = x;
             ls[ls_idx].point.y = y;
             ls_idx++;

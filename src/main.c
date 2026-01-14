@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
 
 	const float sim_speed = 1.0f;
 	float acc = 0;
+	int run = 0;
 	// TODO - let user control simulation speed
 	// TODO - let user pause/unpause simulation
 	// TODO - let usar draw on the screen
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
 	while (!WindowShouldClose()) {
 		acc += GetFrameTime();
 		if (acc > sim_speed) {
-			// gol_step(&game);
+			if (run) gol_step(&game);
 			acc = 0;
 		}
 		// https://www.raylib.com/examples/core/loader.html?name=core_2d_camera_mouse_zoom
@@ -68,7 +69,10 @@ int main(int argc, char **argv) {
 			// };
 			printf("(%f,%f)\n", mouse_pos.x, mouse_pos.y);
 			printf("(%f,%f)\n", mouse_world_pos.x, mouse_world_pos.y);
-			gol_birth_cell(&game, (int)round(mouse_world_pos.x), (int)round(-mouse_world_pos.y));
+			gol_birth_cell(&game, (int)(mouse_world_pos.x), (int)(-mouse_world_pos.y));
+		}
+		if (IsKeyPressed(KEY_SPACE)) {
+			run = !run;
 		}
 	    float wheel = GetMouseWheelMove();
         if (wheel != 0) {

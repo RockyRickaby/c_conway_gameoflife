@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "set.h"
 
@@ -44,6 +45,7 @@ void set_uninit(Set *set) {
 }
 
 int set_put(Set *set, uint64_t key) {
+    assert(set->size <= set->capacity && "Size has outgrown the capacity");
     if (set->size >= set->capacity * set->load_factor) {
         resize(set);
         rehash(set);
@@ -68,9 +70,9 @@ int set_remove(Set *set, uint64_t key) {
     }
     uint64_t idx = 0;
     int found_slot = lookup(set, key, &idx);
-    if (found_slot && set->entries[idx].free == S_OCCUPIED) {
-        set->entries[idx].free = S_FREE; // might be a replacement
+    if (found_slot && set->entries[idx].free == S_OCCUPIED && set->entries[idx].keyval == key) {
         set->entries[idx].keyval = 0;
+        set->entries[idx].free = S_FREE; // might be a replacement
         set->size--;
         return 1;
     } else {
@@ -86,7 +88,7 @@ void set_clear(Set *set) {
 int set_contains(const Set *set, uint64_t key) {
     uint64_t idx = 0;
     int found_slot = lookup(set, key, &idx);
-    return found_slot && set->entries[idx].free == S_OCCUPIED;
+    return found_slot && set->entries[idx].free == S_OCCUPIED && set->entries[idx].keyval == key;
 }
 
 Entry *set_entries(const Set *set) {
@@ -130,7 +132,6 @@ static inline void resize(Set *set) {
     }
     // in case the resizing factor changes, keep the expression at the end
     // this ensures the other slots are marked as free
-    memset(tmp + old_cap, S_FREE, (new_cap - old_cap));
     set->entries = tmp;
     set->capacity = new_cap;
 }

@@ -6,7 +6,7 @@ set(needed_features c_std_11)
 add_executable(main
 	src/main.c
   src/set.c
-  src/gol.c
+  src/gameoflife.c
 )
 
 set(RAYLIB_VERSION 5.5)

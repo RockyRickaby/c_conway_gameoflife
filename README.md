@@ -6,6 +6,16 @@ using CMake (with the arena allocator implementation I've made) _and_ how to int
 into a project. Besides my own arena implementation, this project also uses Raylib to render
 the game onto the screen.
 
+Unlike my previous implementation of this, this one has a virtually infinite grid of cells.
+I haven't tested it thoroughly, so I expect things to break under certain circumstances.
+
+The allocations currently use arbitrary values. They might not matter much,
+but I will make sure that lowering them doesn't break things... maybe.
+
+https://github.com/user-attachments/assets/d7189701-ce46-4dcb-8218-b157c7625c62
+
+
+
 ## Building
 
 > [!WARNING]

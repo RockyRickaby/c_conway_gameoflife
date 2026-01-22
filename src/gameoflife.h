@@ -33,7 +33,7 @@ typedef struct _game_of_life_s {
 void gameoflife_init(GameOfLife *game);
 void gameoflife_uninit(GameOfLife *game);
 size_t gameoflife_living_cells(GameOfLife *game);
-// DO NOT FREE THE OUT BUFFER
+// DO NOT FREE THE BUFFER
 size_t gameoflife_get_cells(GameOfLife *game, Point2Di32 **out_buf);
 void gameoflife_cell_toggle(GameOfLife *game, int x, int y);
 int gameoflife_cell_birth(GameOfLife *game, int x, int y);

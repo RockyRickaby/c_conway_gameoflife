@@ -8,14 +8,15 @@
 #include "sizes.h"
 #include "set.h"
 
-static const size_t ARENA_CAP_DEFAULT = MiB(4);
-static const size_t SET_CAP_DEFAULT = KiB(4);
-
 struct _cell_s {
     int32_t x;
     int32_t y;
     int alive;
 };
+
+static const size_t SET_CAP_DEFAULT = KiB(4);
+static const size_t ARENA_CAP_DEFAULT = SET_CAP_DEFAULT * 12 * sizeof(struct _cell_s);
+static size_t arena_curr_cap = ARENA_CAP_DEFAULT;
 
 void gameoflife_init(GameOfLife *game) {
     memset(game, 0, sizeof(*game));
@@ -26,6 +27,7 @@ void gameoflife_init(GameOfLife *game) {
     game->cells_list.length = 0;
     game->cells_list.arena_size_b = 0;
     game->cells_list.requires_update = 0;
+    arena_curr_cap = ARENA_CAP_DEFAULT;
     return;
 }
 
@@ -41,6 +43,7 @@ size_t gameoflife_living_cells(GameOfLife *game) {
 }
 
 size_t gameoflife_get_cells(GameOfLife *game, Point2Di32 **out_buf) {
+    // copy only if needed
     if (!game->cells_list.requires_update) {
         *out_buf = game->cells_list.list;
         return game->cells_list.length;
@@ -74,8 +77,9 @@ size_t gameoflife_get_cells(GameOfLife *game, Point2Di32 **out_buf) {
 }
 
 void gameoflife_cell_toggle(GameOfLife *game, int x, int y) {
-    if (!set_put(&game->cells, POINT_TO_U64(x,y))) {
-        set_remove(&game->cells, POINT_TO_U64(x,y));
+    uint64_t key = POINT_TO_U64(x,y);
+    if (!set_put(&game->cells, key)) {
+        set_remove(&game->cells, key);
     }
     game->cells_list.requires_update = 1;
 }
@@ -106,8 +110,13 @@ static inline int count_neighbors(GameOfLife *game, int32_t x, int32_t y) {
 }
 
 int gameoflife_step(GameOfLife *game) {
-    int has_next = 0;
     size_t cells_cap = set_capacity(&game->cells);
+    if (set_recently_resized(&game->cells) && cells_cap > arena_curr_cap / (12 * sizeof(struct _cell_s))) {
+        arena_destroy(game->arena);
+        arena_curr_cap = cells_cap * 12 * sizeof(struct _cell_s);
+        game->arena = arena_create(arena_curr_cap);
+    }
+    int has_next = 0;
     // size_t cells_size = set_size(&game->cells);
     size_t count = 0;
     size_t size_out = 0;
@@ -150,10 +159,12 @@ int gameoflife_step(GameOfLife *game) {
         }
     }
 
+    // maybe we can optimize this one day
     set_clear(&game->cells);
     has_next = count > 0;
     for (size_t i = 0; i < count; i++) {
         set_put(&game->cells, POINT_TO_U64(new_cells[i].x,new_cells[i].y));
+        // gameoflife_cell_birth(game, new_cells[i].x, new_cells[i].y);
     }
 
     game->cells_list.requires_update = game->cells_list.requires_update ? 1 : has_next;

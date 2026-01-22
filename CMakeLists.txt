@@ -32,7 +32,7 @@ if (NOT arena_FOUND)
     arena
     DOWNLOAD_EXTRACT_TIMESTAMP OFF
     GIT_REPOSITORY https://github.com/RockyRickaby/simple_arena.git
-    GIT_TAG 9ad3483 # this is annoying to keep track of...
+    GIT_TAG f5303a0 # this is annoying to keep track of...
   )
   FetchContent_GetProperties(arena)
   if (NOT arena_POPULATED)

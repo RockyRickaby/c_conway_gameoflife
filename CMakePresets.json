@@ -37,16 +37,6 @@
         "cacheVariables": {
             "CMAKE_C_FLAGS": "/W4"
         }
-    },
-    {
-        "name": "msvc-debug",
-        "displayName": "MSVC",
-        "description": "Extra build options for Visual Studio",
-        "generator": "Visual Studio 17 2022",
-        "binaryDir": "${sourceDir}/build",
-        "cacheVariables": {
-            "CMAKE_C_FLAGS": "/W4 /D ARENA_DEBUG"
-        }
     }
   ]
 }

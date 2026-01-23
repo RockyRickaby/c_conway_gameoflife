@@ -18,16 +18,12 @@ https://github.com/user-attachments/assets/d7189701-ce46-4dcb-8218-b157c7625c62
 
 ## Building
 
-> [!WARNING]
-> This project has only been tested on Linux. The implementation isn't particularly
-> platform specific, but the generation step hasn't been tested on other platforms.
-
 To build this project, run the following commands. Don't forget to set the `CMAKE_BUILD_TYPE`
-variable to `Debug` or `Release` in case you want specifically one or the other.
+variable to `Debug` or `Release` in case you want specifically one build or the other.
 
 ```bash
-$ cmake -B build
-$ cmake --build build 
+$ cmake -B build # -D CMAKE_BUILD_TYPE=Debug # for generating the build files
+$ cmake --build build # for building the project
 ```
 
 Alternatively, you can always:
@@ -39,12 +35,11 @@ $ make
 ```
 
 The presets all use Ninja (except for MSVC) instead of Make and only serve to enable compiler warnings.
-I recommend Ninja over Make because it often seems to build projects like Raylib
-a lot faster than Make. In case you use Ninja, the last command listed above
-should be changed to simply `ninja`. A preset can be defined, for example, as follows:
+Whether Make is faster than Ninja or not doesn't seem to matter too much when using the `-j` option
+with Make (at least for this project, of course. I feel like Ninja is usually a bit faster).
 
 ```bash
-$ cmake -B build --preset=Clang # just an example. The preset can have a different name
+$ cmake -B build --preset=clang # just an example. The preset can have a different name
 ```
 
 I like Clang (for no reason, really), so I recommend the Clang preset :D.

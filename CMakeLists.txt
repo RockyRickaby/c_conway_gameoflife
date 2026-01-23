@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 4.0)
 project(game_of_life_c VERSION 0 LANGUAGES C)
 
+# include(CheckIPOSupported)
+# check_ipo_supported(RESULT lto_supported OUTPUT error)
+
 set(needed_features c_std_11)
 
 add_executable(main
@@ -8,6 +11,11 @@ add_executable(main
   src/set.c
   src/gameoflife.c
 )
+
+# might be useless
+# if (lto_supported)
+#   set_target_properties(main PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+# endif()
 
 set(RAYLIB_VERSION 5.5)
 find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED

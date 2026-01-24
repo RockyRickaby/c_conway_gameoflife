@@ -40,3 +40,4 @@ int gameoflife_cell_birth(GameOfLife *game, int x, int y);
 int gameoflife_cell_kill(GameOfLife *game, int x, int y);
 int gameoflife_step(GameOfLife *game);
 int gameoflife_steps(GameOfLife *game, int steps);
+void gameoflife_clear(GameOfLife *game);

@@ -32,7 +32,7 @@ int set_init(Set *set, size_t init_cap, uint64_t (*hash_func)(uint64_t)) {
     set->entries = buf;
     set->size = 0;
     set->capacity = init_cap;
-    set->load_factor = 0.75;
+    set->load_factor = 0.70;
     return 0;
 }
 
@@ -130,6 +130,8 @@ static inline int find_slot(const Set *set, uint64_t key, uint64_t *out_idx) {
     return find;
 }
 
+// makes things slow after a bunch of insertions... would require some optimizing,
+// but it might be simpler to just clear and re-insert the points in the set
 static inline int lookup(const Set *set, uint64_t key, uint64_t *out_idx) {
     uint64_t idx = hash(set, key);
     uint64_t stop = idx;

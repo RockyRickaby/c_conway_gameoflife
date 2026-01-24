@@ -15,8 +15,18 @@ struct _cell_s {
 };
 
 static const size_t SET_CAP_DEFAULT = KiB(4);
-static const size_t ARENA_CAP_DEFAULT = SET_CAP_DEFAULT * 12 * sizeof(struct _cell_s);
+static const size_t ARENA_CAP_DEFAULT = SET_CAP_DEFAULT * 9 * sizeof(struct _cell_s);
 static size_t arena_curr_cap = ARENA_CAP_DEFAULT;
+
+static inline void gameoflife_resize_arena(GameOfLife *game, size_t set_cap) {
+    arena_destroy(game->arena);
+    arena_curr_cap = set_cap * 9 * sizeof(struct _cell_s);
+    game->arena = arena_create(arena_curr_cap);
+
+    game->cells_list.list = NULL;
+    game->cells_list.length = 0;
+    game->cells_list.arena_size_b = 0;
+}
 
 void gameoflife_init(GameOfLife *game) {
     memset(game, 0, sizeof(*game));
@@ -58,7 +68,10 @@ size_t gameoflife_get_cells(GameOfLife *game, Point2Di32 **out_buf) {
         game->cells_list.length = 0;
         game->cells_list.arena_size_b = 0;
     }
-    game->cells_list.list = ARENA_PUSH_ARRAY_ZERO(game->arena, Point2Di32, cells_size, &game->cells_list.arena_size_b);
+    if (set_recently_resized(&game->cells) && cells_cap > arena_curr_cap / (9 * sizeof(struct _cell_s))) {
+        gameoflife_resize_arena(game, cells_cap);
+    }
+    game->cells_list.list = ARENA_PUSH_ARRAY(game->arena, Point2Di32, cells_size, &game->cells_list.arena_size_b);
     size_t count = 0;
     Entry *entries = set_entries(&game->cells);
     for (size_t i = 0; i < cells_cap; i++) {
@@ -98,15 +111,24 @@ static inline int count_neighbors(GameOfLife *game, int32_t x, int32_t y) {
     int min = -1;
     int max = 1;
     int count = 0;
-    for (int dy = min; dy <= max; dy++) {
-        for (int dx = min; dx <= max; dx++) {
-            if (dx == 0 && dy == 0) continue; 
-            if (set_contains(&game->cells, POINT_TO_U64(x + dx, y + dy))) {
-                count++;
-            }
-        }
-    }
-    return count;
+    // for (int dy = min; dy <= max; dy++) {
+    //     for (int dx = min; dx <= max; dx++) {
+    //         if (dx == 0 && dy == 0) continue; 
+    //         if (set_contains(&game->cells, POINT_TO_U64(x + dx, y + dy))) {
+    //             count++;
+    //         }
+    //     }
+    // }
+    // return count;
+    return
+        set_contains(&game->cells, POINT_TO_U64(x + 1,  y - 1)) + 
+        set_contains(&game->cells, POINT_TO_U64(x + 0,  y - 1)) + 
+        set_contains(&game->cells, POINT_TO_U64(x - 1,  y - 1)) + 
+        set_contains(&game->cells, POINT_TO_U64(x + 1,  y + 0)) + 
+        set_contains(&game->cells, POINT_TO_U64(x - 1,  y + 0)) + 
+        set_contains(&game->cells, POINT_TO_U64(x + 1,  y + 1)) + 
+        set_contains(&game->cells, POINT_TO_U64(x + 0,  y + 1)) + 
+        set_contains(&game->cells, POINT_TO_U64(x - 1,  y + 1));
 }
 
 int gameoflife_step(GameOfLife *game) {
@@ -116,42 +138,38 @@ int gameoflife_step(GameOfLife *game) {
         return 0;
     }
     size_t cells_cap = set_capacity(&game->cells);
-    if (set_recently_resized(&game->cells) && cells_cap > arena_curr_cap / (12 * sizeof(struct _cell_s))) {
-        arena_destroy(game->arena);
-        arena_curr_cap = cells_cap * 12 * sizeof(struct _cell_s);
-        game->arena = arena_create(arena_curr_cap);
+    if (set_recently_resized(&game->cells) && cells_cap > arena_curr_cap / (9 * sizeof(struct _cell_s))) {
+        gameoflife_resize_arena(game, cells_cap);
     }
     int has_next = 0;
     // size_t cells_size = set_size(&game->cells);
     size_t live_count = 0;
-    size_t dead_count = 0;
     size_t size_out = 0;
-    size_t arena_pos = arena_get_pos(game->arena);
     Entry *entries = set_entries(&game->cells);
-    struct _cell_s *new_cells = ARENA_PUSH_ARRAY_ZERO(game->arena, struct _cell_s, cells_cap * 8, &size_out);
-    // for now, let it error out for now
-    struct _cell_s *kill_cells = ARENA_PUSH_ARRAY_ZERO(game->arena, struct _cell_s, cells_size, &size_out);
+    struct _cell_s *new_cells = ARENA_PUSH_ARRAY(game->arena, struct _cell_s, cells_cap * 8, &size_out);
 
+    size_t s_count = 0;
     for (size_t i = 0; i < cells_cap; i++) {
         if (entries[i].free == S_OCCUPIED) {
+            s_count++;
             int32_t x;
             int32_t y;
             U64_TO_POINT(entries[i].keyval, x, y);
-            int min = -1;
-            int max = 1;
+            const int min = -1;
+            const int max = 1;
             int neighbors = count_neighbors(game, x, y);
-            // 
-            if (neighbors < 2 || neighbors > 3) {
-                kill_cells[dead_count] = (struct _cell_s) {
+            if (neighbors >= 2 && neighbors <= 3) {
+                new_cells[live_count] = (struct _cell_s) {
                     .x = x,
                     .y = y,
                     .alive = 1
                 };
-                dead_count++;
+                live_count++;
             }
             for (int dy = min; dy <= max; dy++) {
                 for (int dx = min; dx <= max; dx++) {
-                    if ((dy == 0 && dx == 0) || set_contains(&game->cells, POINT_TO_U64(x + dx, y + dy))) {
+                    int live_neighbor = set_contains(&game->cells, POINT_TO_U64(x + dx, y + dy));
+                    if ((dy == 0 && dx == 0) || live_neighbor) {
                         continue;
                     }
                     neighbors = count_neighbors(game, x + dx, y + dy);
@@ -165,24 +183,20 @@ int gameoflife_step(GameOfLife *game) {
                     }
                 }
             }
+
+            if (s_count == cells_size) {
+                break;
+            }
         }
     }
-
-    // maybe we can optimize this one day
-    // set_clear(&game->cells);
-    has_next = live_count || dead_count;
-    for (size_t i = 0; i < dead_count; i++) {
-        set_remove(&game->cells, POINT_TO_U64(kill_cells[i].x,kill_cells[i].y));
-        // gameoflife_cell_birth(game, new_cells[i].x, new_cells[i].y);
-    }
+    set_clear(&game->cells);
+    has_next = live_count;
     for (size_t i = 0; i < live_count; i++) {
         set_put(&game->cells, POINT_TO_U64(new_cells[i].x,new_cells[i].y));
-        // gameoflife_cell_birth(game, new_cells[i].x, new_cells[i].y);
     }
-
     game->cells_list.requires_update = game->cells_list.requires_update ? 1 : has_next;
-    // arena_pop(game->arena, size_out);
-    arena_pop_to(game->arena, arena_pos);
+    if (has_next) game->generation += 1;
+    arena_pop(game->arena, size_out);
     return has_next;
 }
 
@@ -190,4 +204,10 @@ int gameoflife_steps(GameOfLife *game, int steps) {
     int ret = 0;
     while (steps--) ret = gameoflife_step(game);
     return ret;
+}
+
+void gameoflife_clear(GameOfLife *game) {
+    set_clear(&game->cells);
+    game->cells_list.requires_update = 1;
+    game->generation = 0;
 }

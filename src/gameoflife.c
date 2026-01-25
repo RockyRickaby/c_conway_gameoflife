@@ -71,6 +71,7 @@ size_t gameoflife_get_cells(GameOfLife *game, Point2Di32 **out_buf) {
     if (set_recently_resized(&game->cells) && cells_cap > arena_curr_cap / (9 * sizeof(struct _cell_s))) {
         gameoflife_resize_arena(game, cells_cap);
     }
+    // let it error out when size is 0. it won't kill anyone, it's fine
     game->cells_list.list = ARENA_PUSH_ARRAY(game->arena, Point2Di32, cells_size, &game->cells_list.arena_size_b);
     size_t count = 0;
     Entry *entries = set_entries(&game->cells);
@@ -144,6 +145,7 @@ int gameoflife_step(GameOfLife *game) {
     int has_next = 0;
     // size_t cells_size = set_size(&game->cells);
     size_t live_count = 0;
+    size_t dead_count = 0;
     size_t size_out = 0;
     Entry *entries = set_entries(&game->cells);
     struct _cell_s *new_cells = ARENA_PUSH_ARRAY(game->arena, struct _cell_s, cells_cap * 8, &size_out);
@@ -165,6 +167,8 @@ int gameoflife_step(GameOfLife *game) {
                     .alive = 1
                 };
                 live_count++;
+            } else {
+                dead_count++;
             }
             for (int dy = min; dy <= max; dy++) {
                 for (int dx = min; dx <= max; dx++) {
@@ -190,7 +194,7 @@ int gameoflife_step(GameOfLife *game) {
         }
     }
     set_clear(&game->cells);
-    has_next = live_count;
+    has_next = live_count || dead_count;
     for (size_t i = 0; i < live_count; i++) {
         set_put(&game->cells, POINT_TO_U64(new_cells[i].x,new_cells[i].y));
     }

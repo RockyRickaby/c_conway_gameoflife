@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
 	float sim_speed = 0.1f;
 	float acc = 0;
 	int run = 0;
+	int instructions = 1;
 	// TODO - let user control simulation speed
 	// TODO - add dark mode
 	// TODO - figure out how to better draw pixels on a screen
@@ -107,15 +108,16 @@ int main(int argc, char **argv) {
 			case KEY_B: {
 				dark_mode = !dark_mode;
 				if (dark_mode) {
-					foreground = WHITE;
+					foreground = RAYWHITE;
 					background = BLACK;
 				} else {
-					background = WHITE;
+					background = RAYWHITE;
 					foreground = BLACK;
 				}
 				break;
 			}
 			case KEY_C: { gameoflife_clear(&game); break; }
+			case KEY_H: { instructions = !instructions; break; }
 			default: break;
 		}
 
@@ -154,6 +156,9 @@ int main(int argc, char **argv) {
 				// DrawText("Hello, world!!", 100, 100, 32, BLACK);
 				// rlPopMatrix();
 			EndMode2D();
+			if (instructions) {
+				DrawText("Left Mouse: Add cell\nRight Mouse: Move the camera\n\nSPACE: Runs the simulation\nB: Switches to dark/light mode\nC: Removes all the cells\nH: Show/hide this text", 10, 10, 26, foreground);
+			}
 			// DrawTexture(grid.texture, 0, 0, BLANK);
 		EndDrawing();
 		// DrawFPS(0,0);

@@ -8,19 +8,25 @@
 #include "sizes.h"
 #include "set.h"
 
+#define __ARENA_CALC_SIZE(set_size) ((set_size) * 9 * sizeof(struct _cell_s))
+#define __SET_CAP_FROM_ARENA_CAP(arena_cap) ((arena_cap) / (9 * sizeof(struct _cell_s)))
+
+#define __SET_DEFAULT_CAP (KiB(4))
+#define __ARENA_DEFAULT_CAP (__ARENA_CALC_SIZE(__SET_DEFAULT_CAP))
+
 struct _cell_s {
     int32_t x;
     int32_t y;
     int alive;
 };
 
-static const size_t SET_CAP_DEFAULT = KiB(4);
-static const size_t ARENA_CAP_DEFAULT = SET_CAP_DEFAULT * 9 * sizeof(struct _cell_s);
-static size_t arena_curr_cap = ARENA_CAP_DEFAULT;
+static const size_t SET_CAP_DEFAULT = __SET_DEFAULT_CAP;
+static const size_t ARENA_CAP_DEFAULT = __ARENA_DEFAULT_CAP;
+static size_t arena_curr_cap = __ARENA_DEFAULT_CAP;
 
 static inline void gameoflife_resize_arena(GameOfLife *game, size_t set_cap) {
     arena_destroy(game->arena);
-    arena_curr_cap = set_cap * 9 * sizeof(struct _cell_s);
+    arena_curr_cap = __ARENA_CALC_SIZE(set_cap);
     game->arena = arena_create(arena_curr_cap);
 
     game->cells_list.list = NULL;
@@ -68,7 +74,7 @@ size_t gameoflife_get_cells(GameOfLife *game, Point2Di32 **out_buf) {
         game->cells_list.length = 0;
         game->cells_list.arena_size_b = 0;
     }
-    if (set_recently_resized(&game->cells) && cells_cap > arena_curr_cap / (9 * sizeof(struct _cell_s))) {
+    if (set_recently_resized(&game->cells) && cells_cap > __SET_CAP_FROM_ARENA_CAP(arena_curr_cap)) {
         gameoflife_resize_arena(game, cells_cap);
     }
     // let it error out when size is 0. it won't kill anyone, it's fine
@@ -139,7 +145,7 @@ int gameoflife_step(GameOfLife *game) {
         return 0;
     }
     size_t cells_cap = set_capacity(&game->cells);
-    if (set_recently_resized(&game->cells) && cells_cap > arena_curr_cap / (9 * sizeof(struct _cell_s))) {
+    if (set_recently_resized(&game->cells) && cells_cap > __SET_CAP_FROM_ARENA_CAP(arena_curr_cap)) {
         gameoflife_resize_arena(game, cells_cap);
     }
     int has_next = 0;
